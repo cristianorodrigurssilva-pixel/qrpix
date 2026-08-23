@@ -47,7 +47,7 @@
 
         label { font-size: 14px; font-weight: 700; color: #1e3a8a; display: block; margin-top: 14px; }
         
-        input { 
+        input, select { 
             width: 100%; 
             padding: 12px; 
             margin-top: 6px; 
@@ -58,7 +58,7 @@
             color: #1e293b;
             transition: all 0.2s;
         }
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #2563eb;
             background: #ffffff;
@@ -138,8 +138,17 @@
 <div class="container">
     <h1>Qr<span class="pix-color">Pix</span></h1>
 
-    <label for="chave">Chave Pix (Exata como no banco):</label>
-    <input type="text" id="chave" placeholder="CPF, CNPJ, E-mail, Celular ou Aleatória">
+    <label for="tipoChave">Tipo de Chave Pix:</label>
+    <select id="tipoChave" onchange="alterarTipoChave()">
+        <option value="CELULAR">Celular</option>
+        <option value="CPF">CPF</option>
+        <option value="CNPJ">CNPJ</option>
+        <option value="EMAIL">E-mail</option>
+        <option value="EVP">Chave Aleatória (EVP)</option>
+    </select>
+
+    <label for="chave" id="labelChave">Chave Pix (DDD + Número):</label>
+    <input type="text" id="chave" placeholder="(00) 00000-0000">
 
     <label for="nome">Nome do Recebedor:</label>
     <input type="text" id="nome" placeholder="Seu Nome ou Razão Social">
@@ -204,9 +213,13 @@ function salvarDado(campo, valor) {
 }
 
 function carregarDados() {
+    let tipo = localStorage.getItem('pix_teste_tipoChave');
     let chave = localStorage.getItem('pix_teste_chave');
     let nome = localStorage.getItem('pix_teste_nome');
     let cidade = localStorage.getItem('pix_teste_cidade');
+
+    if (tipo) document.getElementById('tipoChave').value = tipo;
+    alterarTipoChave();
 
     if (chave) document.getElementById('chave').value = chave;
     if (nome) document.getElementById('nome').value = nome;
@@ -217,6 +230,12 @@ function carregarDados() {
             const tx = db.transaction("dados", "readonly");
             const store = tx.objectStore("dados");
             
+            store.get("tipoChave").onsuccess = (e) => {
+                if (e.target.result && !document.getElementById('tipoChave').value) {
+                    document.getElementById('tipoChave').value = e.target.result.valor;
+                    alterarTipoChave();
+                }
+            };
             store.get("chave").onsuccess = (e) => {
                 if (e.target.result && !document.getElementById('chave').value) {
                     document.getElementById('chave').value = e.target.result.valor;
@@ -236,6 +255,31 @@ function carregarDados() {
                 }
             };
         } catch (err) {}
+    }
+}
+
+function alterarTipoChave() {
+    const tipo = document.getElementById('tipoChave').value;
+    const label = document.getElementById('labelChave');
+    const input = document.getElementById('chave');
+
+    salvarDado('tipoChave', tipo);
+
+    if (tipo === 'CELULAR') {
+        label.innerText = 'Chave Pix (DDD + Número):';
+        input.placeholder = '(00) 00000-0000';
+    } else if (tipo === 'CPF') {
+        label.innerText = 'Chave Pix (CPF):';
+        input.placeholder = '000.000.000-00';
+    } else if (tipo === 'CNPJ') {
+        label.innerText = 'Chave Pix (CNPJ):';
+        input.placeholder = '00.000.000/0001-00';
+    } else if (tipo === 'EMAIL') {
+        label.innerText = 'Chave Pix (E-mail):';
+        input.placeholder = 'seuemail@exemplo.com';
+    } else if (tipo === 'EVP') {
+        label.innerText = 'Chave Aleatória (EVP):';
+        input.placeholder = '00000000-0000-0000-0000-000000000000';
     }
 }
 
@@ -276,14 +320,20 @@ document.getElementById('btn-instalar').addEventListener('click', (e) => {
     }
 });
 
-// Máscara de Moeda
+// MÁSCARA DE MOEDA CORRIGIDA E COMPATÍVEL COM PWA MÓVEL
 document.getElementById('valor').addEventListener('input', function(e) {
-    let v = e.target.value.replace(/\D/g, '');
-    if (!v) { e.target.value = ''; return; }
-    v = (parseInt(v, 10) / 100).toFixed(2);
-    v = v.replace('.', ',');
-    v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-    e.target.value = v;
+    let value = e.target.value.replace(/\D/g, ''); // Isolamento estrito de dígitos
+    
+    if (!value) {
+        e.target.value = '';
+        return;
+    }
+
+    // Converte centavos para formato pt-BR
+    let options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    let result = (parseInt(value, 10) / 100).toLocaleString('pt-BR', options);
+
+    e.target.value = result;
 });
 
 // Algoritmo CRC16 CCITT-FALSE Oficial
@@ -321,46 +371,37 @@ function limparTexto(texto) {
     return t.trim().toUpperCase();
 }
 
-// DETECÇÃO E SANITIZAÇÃO RIGOROSA DA CHAVE PIX (PADRÃO BANCO CENTRAL)
-function tratarChavePix(chaveBruta) {
+// SANITIZAÇÃO RIGOROSA COM BASE NO TIPO SELECIONADO
+function tratarChavePixPorTipo(chaveBruta, tipo) {
     if (!chaveBruta) return '';
     let c = chaveBruta.trim();
 
-    // 1. E-mail (Normaliza para minúsculas)
-    if (c.includes('@')) {
+    if (tipo === 'EMAIL') {
         return c.toLowerCase().trim();
     }
 
-    // 2. Chave Aleatória / EVP (36 caracteres com hífens)
-    if (c.length === 36 && (c.match/-/g) || []).length === 4) {
+    if (tipo === 'EVP') {
         return c.toLowerCase().trim();
     }
 
-    // Extrai estritamente os dígitos numéricos
     let apenasNumeros = c.replace(/\D/g, '');
 
-    // 3. CNPJ (14 dígitos)
-    if (apenasNumeros.length === 14) {
+    if (tipo === 'CPF') {
         return apenasNumeros;
     }
 
-    // 4. CPF (11 dígitos, onde o 3º dígito/DDD NÃO é 9)
-    if (apenasNumeros.length === 11 && apenasNumeros.charAt(2) !== '9') {
+    if (tipo === 'CNPJ') {
         return apenasNumeros;
     }
 
-    // 5. CELULAR (Exige obrigatoriamente o prefixo +55 conforme o DICT/BACEN)
-    if (c.startsWith('+55')) {
-        return '+55' + apenasNumeros.substring(2);
-    }
-
-    // Celular digitado com DDI 55 mas sem o '+' (12 ou 13 dígitos)
-    if ((apenasNumeros.length === 12 || apenasNumeros.length === 13) && apenasNumeros.startsWith('55')) {
-        return '+' + apenasNumeros;
-    }
-
-    // Celular digitado apenas com DDD + Número (10 ou 11 dígitos, ex: 85989386254 ou 8532001122)
-    if (apenasNumeros.length === 10 || apenasNumeros.length === 11) {
+    if (tipo === 'CELULAR') {
+        // Padrão Internacional E.164 exigido pelo Banco Central (+55)
+        if (c.startsWith('+55')) {
+            return '+55' + apenasNumeros.substring(2);
+        }
+        if ((apenasNumeros.length === 12 || apenasNumeros.length === 13) && apenasNumeros.startsWith('55')) {
+            return '+' + apenasNumeros;
+        }
         return '+55' + apenasNumeros;
     }
 
@@ -368,12 +409,13 @@ function tratarChavePix(chaveBruta) {
 }
 
 function gerarPix() {
+    let tipo = document.getElementById('tipoChave').value;
     let chaveBruta = document.getElementById('chave').value;
     let nomeOriginal = document.getElementById('nome').value;
     let cidadeOriginal = document.getElementById('cidade').value;
     let valorInput = document.getElementById('valor').value;
 
-    let chave = tratarChavePix(chaveBruta);
+    let chave = tratarChavePixPorTipo(chaveBruta, tipo);
     let nome = limparTexto(nomeOriginal).substring(0, 25);
     let cidade = limparTexto(cidadeOriginal).substring(0, 15);
 
@@ -393,7 +435,7 @@ function gerarPix() {
     // 52: Categoria, 53: Moeda (986 = BRL)
     payload += formatField('52', '0000') + formatField('53', '986');
 
-    // 54: Valor (Opcional)
+    // 54: Valor (Opcional - Tratamento de valor formatado pt-BR)
     if (valorInput) {
         let valorTratado = valorInput.replace(/\./g, '').replace(',', '.').trim();
         let valorNum = parseFloat(valorTratado);
