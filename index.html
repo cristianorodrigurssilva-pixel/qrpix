@@ -168,7 +168,7 @@
 <div id="toast" class="toast">✓ Código Pix copiado!</div>
 
 <script>
-// --- SISTEMA DE BANCO DE DADOS PERSISTENTE (IndexedDB + localStorage) ---
+// --- BANCO DE DADOS PERSISTENTE ---
 let db;
 const dbName = "QrPixDatabase_TESTE";
 
@@ -286,11 +286,14 @@ document.getElementById('valor').addEventListener('input', function(e) {
     e.target.value = v;
 });
 
-// Algoritmo CRC16 CCITT-FALSE
+// Algoritmo CRC16 CCITT-FALSE Oficial
 function CRC16(str) {
     let crc = 0xFFFF;
-    for (let c = 0; c < str.length; c++) {
-        crc ^= str.charCodeAt(c & 0xFF) << 8;
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(str);
+
+    for (let c = 0; c < bytes.length; c++) {
+        crc ^= bytes[c] << 8;
         for (let i = 0; i < 8; i++) {
             if ((crc & 0x8000) !== 0) {
                 crc = (crc << 1) ^ 0x1021;
@@ -302,13 +305,14 @@ function CRC16(str) {
     return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 }
 
-// Formatação TLV
+// Formatação TLV com calculo UTF-8 exato em Bytes
 function formatField(id, value) {
-    const len = value.length.toString().padStart(2, '0');
+    const encoder = new TextEncoder();
+    const len = encoder.encode(value).length.toString().padStart(2, '0');
     return id + len + value;
 }
 
-// Limpeza de Texto conforme padronização do BACEN (ASCII Estrito)
+// Limpeza de Texto (ASCII sem acentos)
 function limparTexto(texto) {
     if (!texto) return '';
     let t = texto.replace(/&/g, 'E');
@@ -317,33 +321,40 @@ function limparTexto(texto) {
     return t.trim().toUpperCase();
 }
 
-// Formatação estrita das Chaves
+// LÓGICA CORRIGIDA: Tratamento Rigoroso de Chaves Pix
 function tratarChavePix(chaveBruta) {
     let c = chaveBruta.trim();
     
-    // E-mail
+    // 1. E-mail (Mantém em minúsculas)
     if (c.includes('@')) {
         return c.toLowerCase();
     }
 
-    // Chave Aleatória (EVP)
+    // 2. Chave Aleatória / EVP (36 caracteres com hífens)
     if (c.length === 36 && c.includes('-')) {
         return c.toLowerCase();
     }
 
+    // Isola somente os números para testar CPF, CNPJ ou Telefone
     let apenasNumeros = c.replace(/\D/g, '');
 
-    // Celular: Formato Internacional (+55 é exigido para validação do DICT em transações reais)
+    // 3. CPF (Exatamente 11 dígitos -> APENAS NÚMEROS)
+    if (apenasNumeros.length === 11) {
+        return apenasNumeros;
+    }
+
+    // 4. CNPJ (Exatamente 14 dígitos -> APENAS NÚMEROS)
+    if (apenasNumeros.length === 14) {
+        return apenasNumeros;
+    }
+
+    // 5. Celular sem DDI -> Adiciona 55 (sem o sinal de +)
     if (apenasNumeros.length === 10 || apenasNumeros.length === 11) {
-        return '+55' + apenasNumeros;
+        return '55' + apenasNumeros;
     }
 
+    // 6. Celular já com DDI 55
     if ((apenasNumeros.length === 12 || apenasNumeros.length === 13) && apenasNumeros.startsWith('55')) {
-        return '+' + apenasNumeros;
-    }
-
-    // CPF ou CNPJ
-    if (apenasNumeros.length === 11 || apenasNumeros.length === 14) {
         return apenasNumeros;
     }
 
@@ -365,14 +376,18 @@ function gerarPix() {
         return;
     }
 
-    // Payload básico no padrão BR Code Estático
-    let payload = formatField('00', '01');
+    // 00: Format Indicator
+    // 01: Initiation Method (12 = Estático/Reutilizável)
+    let payload = formatField('00', '01') + formatField('01', '12');
 
+    // 26: Informações do Recebedor (Chave)
     let merchantAccount = formatField('00', 'BR.GOV.BCB.PIX') + formatField('01', chave);
     payload += formatField('26', merchantAccount);
 
+    // 52: Categoria, 53: Moeda (986 = BRL)
     payload += formatField('52', '0000') + formatField('53', '986');
 
+    // 54: Valor (Opcional)
     if (valorInput) {
         let valorTratado = valorInput.replace(/\./g, '').replace(',', '.').trim();
         let valorNum = parseFloat(valorTratado);
@@ -381,13 +396,16 @@ function gerarPix() {
         }
     }
 
+    // 58: País, 59: Nome, 60: Cidade
     payload += formatField('58', 'BR') + 
                formatField('59', nome) + 
                formatField('60', cidade);
 
+    // 62: TXID Padrão
     let txidField = formatField('05', '***');
     payload += formatField('62', txidField);
 
+    // 63: CRC16
     payload += '6304';
 
     const crc = CRC16(payload);
