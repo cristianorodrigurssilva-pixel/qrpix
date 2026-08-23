@@ -305,7 +305,7 @@ function CRC16(str) {
     return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 }
 
-// Formatação TLV com calculo UTF-8 exato em Bytes
+// Formatação TLV calculada rigorosamente em Bytes UTF-8
 function formatField(id, value) {
     const encoder = new TextEncoder();
     const len = encoder.encode(value).length.toString().padStart(2, '0');
@@ -321,11 +321,11 @@ function limparTexto(texto) {
     return t.trim().toUpperCase();
 }
 
-// LÓGICA CORRIGIDA: Tratamento Rigoroso de Chaves Pix
+// DETECÇÃO DEFINITIVA DE CHAVE PIX
 function tratarChavePix(chaveBruta) {
     let c = chaveBruta.trim();
     
-    // 1. E-mail (Mantém em minúsculas)
+    // 1. E-mail (Preserva minúsculas)
     if (c.includes('@')) {
         return c.toLowerCase();
     }
@@ -335,27 +335,37 @@ function tratarChavePix(chaveBruta) {
         return c.toLowerCase();
     }
 
-    // Isola somente os números para testar CPF, CNPJ ou Telefone
+    // Isola somente dígitos numéricos
     let apenasNumeros = c.replace(/\D/g, '');
 
-    // 3. CPF (Exatamente 11 dígitos -> APENAS NÚMEROS)
-    if (apenasNumeros.length === 11) {
-        return apenasNumeros;
-    }
-
-    // 4. CNPJ (Exatamente 14 dígitos -> APENAS NÚMEROS)
+    // 3. CNPJ (14 dígitos)
     if (apenasNumeros.length === 14) {
         return apenasNumeros;
     }
 
-    // 5. Celular sem DDI -> Adiciona 55 (sem o sinal de +)
-    if (apenasNumeros.length === 10 || apenasNumeros.length === 11) {
-        return '55' + apenasNumeros;
+    // 4. Celular no formato internacional já com +55
+    if (c.startsWith('+55')) {
+        return '+55' + apenasNumeros.substring(2);
     }
 
-    // 6. Celular já com DDI 55
+    // 5. Celular com DDI 55 digitado sem o '+' (12 ou 13 dígitos, ex: 5585989386254)
     if ((apenasNumeros.length === 12 || apenasNumeros.length === 13) && apenasNumeros.startsWith('55')) {
+        return '+' + apenasNumeros;
+    }
+
+    // 6. Diferenciação Fina entre Celular (11 dígitos, DDD + 9XXXX-XXXX) e CPF (11 dígitos)
+    if (apenasNumeros.length === 11) {
+        // Se o 3º dígito for '9' (índice 2), trata como Celular de 11 dígitos no Brasil
+        if (apenasNumeros.charAt(2) === '9') {
+            return '+55' + apenasNumeros;
+        }
+        // Caso contrário, é um CPF tradicional
         return apenasNumeros;
+    }
+
+    // 7. Telefone fixo ou celular antigo (10 dígitos: DDD + 8 dígitos)
+    if (apenasNumeros.length === 10) {
+        return '+55' + apenasNumeros;
     }
 
     return c;
