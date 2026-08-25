@@ -492,15 +492,9 @@ function copiarPix() {
 
 function enviarWhatsApp() {
     const pixCode = document.getElementById('pix-payload').value.trim();
-    const valorInput = document.getElementById('valor').value;
     if (!pixCode) return;
 
-    let msg = `Olá! Segue o código Pix Copia e Cola para pagamento:\n\n\`${pixCode}\``;
-    if (valorInput) {
-        msg = `Olá! Segue o código Pix no valor de *R$ ${valorInput}*:\n\n\`${pixCode}\``;
-    }
-
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(pixCode)}`;
     window.open(url, '_blank');
 }
 </script>
