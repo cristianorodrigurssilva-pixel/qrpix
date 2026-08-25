@@ -322,14 +322,13 @@ document.getElementById('btn-instalar').addEventListener('click', (e) => {
 
 // MÁSCARA DE MOEDA CORRIGIDA E COMPATÍVEL COM PWA MÓVEL
 document.getElementById('valor').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, ''); // Isolamento estrito de dígitos
+    let value = e.target.value.replace(/\D/g, '');
     
     if (!value) {
         e.target.value = '';
         return;
     }
 
-    // Converte centavos para formato pt-BR
     let options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
     let result = (parseInt(value, 10) / 100).toLocaleString('pt-BR', options);
 
@@ -376,26 +375,17 @@ function tratarChavePixPorTipo(chaveBruta, tipo) {
     if (!chaveBruta) return '';
     let c = chaveBruta.trim();
 
-    if (tipo === 'EMAIL') {
-        return c.toLowerCase().trim();
-    }
-
-    if (tipo === 'EVP') {
+    if (tipo === 'EMAIL' || tipo === 'EVP') {
         return c.toLowerCase().trim();
     }
 
     let apenasNumeros = c.replace(/\D/g, '');
 
-    if (tipo === 'CPF') {
-        return apenasNumeros;
-    }
-
-    if (tipo === 'CNPJ') {
+    if (tipo === 'CPF' || tipo === 'CNPJ') {
         return apenasNumeros;
     }
 
     if (tipo === 'CELULAR') {
-        // Padrão Internacional E.164 exigido pelo Banco Central (+55)
         if (c.startsWith('+55')) {
             return '+55' + apenasNumeros.substring(2);
         }
@@ -424,18 +414,13 @@ function gerarPix() {
         return;
     }
 
-    // 00: Format Indicator
-    // 01: Initiation Method (12 = Estático/Reutilizável)
     let payload = formatField('00', '01') + formatField('01', '12');
 
-    // 26: Informações do Recebedor (Chave)
     let merchantAccount = formatField('00', 'BR.GOV.BCB.PIX') + formatField('01', chave);
     payload += formatField('26', merchantAccount);
 
-    // 52: Categoria, 53: Moeda (986 = BRL)
     payload += formatField('52', '0000') + formatField('53', '986');
 
-    // 54: Valor (Opcional - Tratamento de valor formatado pt-BR)
     if (valorInput) {
         let valorTratado = valorInput.replace(/\./g, '').replace(',', '.').trim();
         let valorNum = parseFloat(valorTratado);
@@ -444,16 +429,13 @@ function gerarPix() {
         }
     }
 
-    // 58: País, 59: Nome, 60: Cidade
     payload += formatField('58', 'BR') + 
                formatField('59', nome) + 
                formatField('60', cidade);
 
-    // 62: TXID Padrão
     let txidField = formatField('05', '***');
     payload += formatField('62', txidField);
 
-    // 63: CRC16
     payload += '6304';
 
     const crc = CRC16(payload);
@@ -510,8 +492,15 @@ function copiarPix() {
 
 function enviarWhatsApp() {
     const pixCode = document.getElementById('pix-payload').value.trim();
+    const valorInput = document.getElementById('valor').value;
     if (!pixCode) return;
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(pixCode)}`;
+
+    let msg = `Olá! Segue o código Pix Copia e Cola para pagamento:\n\n\`${pixCode}\``;
+    if (valorInput) {
+        msg = `Olá! Segue o código Pix no valor de *R$ ${valorInput}*:\n\n\`${pixCode}\``;
+    }
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
 }
 </script>
