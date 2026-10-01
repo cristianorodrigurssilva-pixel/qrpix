@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QrPix (Ambiente de Testes)</title>
+    <title>QrPix</title>
     
     <!-- Configurações PWA -->
     <link rel="manifest" href="./manifest.json">
@@ -29,35 +29,103 @@
             background: #ffffff; 
             padding: 25px; 
             border-radius: 20px; 
-            max-width: 450px; 
+            max-width: 420px; 
             width: 100%; 
             box-shadow: 0 12px 30px rgba(37, 99, 235, 0.12); 
             border: 1px solid #bfdbfe;
+            position: relative;
         }
         
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
         h1 { 
-            font-size: 30px; 
+            font-size: 32px; 
             font-weight: 800; 
             color: #1e3a8a; 
-            margin-bottom: 20px; 
-            text-align: center;
             letter-spacing: 0.5px;
         }
         .pix-color { color: #06b6d4; }
+
+        /* Cartão Discreto do Recebedor */
+        .card-recebedor {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recebedor-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+            padding-right: 10px;
+        }
+
+        .recebedor-nome {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e3a8a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .recebedor-chave {
+            font-size: 12px;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-alterar {
+            background: none;
+            border: none;
+            color: #2563eb;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            width: auto;
+            margin: 0;
+            line-height: normal;
+        }
+        .btn-alterar:hover {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
 
         label { font-size: 14px; font-weight: 700; color: #1e3a8a; display: block; margin-top: 14px; }
         
         input, select { 
             width: 100%; 
-            padding: 12px; 
+            padding: 14px; 
             margin-top: 6px; 
             border: 2px solid #bfdbfe; 
             border-radius: 10px; 
-            font-size: 16px; 
+            font-size: 18px; 
             background: #f8fafc; 
             color: #1e293b;
             transition: all 0.2s;
         }
+        
+        .input-valor {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: #2563eb;
+        }
+
         input:focus, select:focus {
             outline: none;
             border-color: #2563eb;
@@ -65,7 +133,7 @@
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
         }
 
-        button { 
+        button.btn-principal { 
             width: 100%; 
             padding: 14px; 
             background-color: #2563eb; 
@@ -74,18 +142,17 @@
             border-radius: 10px; 
             font-size: 16px; 
             font-weight: bold; 
-            margin-top: 20px; 
+            margin-top: 16px; 
             cursor: pointer; 
-            transition: background 0.2s, transform 0.1s, color 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
-        button:hover { background-color: #1d4ed8; }
-        button:active { transform: scale(0.99); }
+        button.btn-principal:hover { background-color: #1d4ed8; }
+        button.btn-principal:active { transform: scale(0.99); }
         
-        .btn-whatsapp { background-color: #25d366; color: white; margin-top: 10px; }
-        .btn-whatsapp:hover { background-color: #1eb954; }
+        .btn-whatsapp { background-color: #25d366 !important; color: white; margin-top: 10px; }
+        .btn-whatsapp:hover { background-color: #1eb954 !important; }
         
-        #btn-instalar { background-color: #0f172a; color: white; display: none; }
-        #btn-instalar:hover { background-color: #1e293b; }
+        #btn-instalar { background-color: #0f172a; color: white; display: none; margin-top: 15px; }
         
         #qrcode-container { 
             margin-top: 20px; 
@@ -97,20 +164,29 @@
             border: 1px dashed #38bdf8;
         }
         
-        .result-box { display: none; margin-top: 20px; }
+        .result-box { display: none; margin-top: 15px; }
         
         textarea { 
             width: 100%; 
-            height: 85px; 
+            height: 75px; 
             margin-top: 8px; 
             padding: 10px; 
             border-radius: 10px; 
             border: 2px solid #bfdbfe; 
             font-family: monospace; 
-            font-size: 12px; 
+            font-size: 11px; 
             resize: none; 
             background: #f8fafc; 
             color: #1e3a8a;
+        }
+
+        .config-box {
+            display: none;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
         }
 
         .toast {
@@ -136,32 +212,47 @@
 <body>
 
 <div class="container">
-    <h1>Qr<span class="pix-color">Pix</span></h1>
+    <div class="header">
+        <h1>Qr<span class="pix-color">Pix</span></h1>
+    </div>
 
-    <label for="tipoChave">Tipo de Chave Pix:</label>
-    <select id="tipoChave" onchange="alterarTipoChave()">
-        <option value="CELULAR">Celular</option>
-        <option value="CPF">CPF</option>
-        <option value="CNPJ">CNPJ</option>
-        <option value="EMAIL">E-mail</option>
-        <option value="EVP">Chave Aleatória (EVP)</option>
-    </select>
+    <!-- Resumo Sutil do Recebedor -->
+    <div class="card-recebedor">
+        <div class="recebedor-info">
+            <span class="recebedor-nome" id="resumo-nome">Sem recebedor cadastrado</span>
+            <span class="recebedor-chave" id="resumo-chave">Clique para configurar seus dados</span>
+        </div>
+        <button type="button" class="btn-alterar" onclick="toggleConfig()" id="btn-alterar-texto">Alterar</button>
+    </div>
 
-    <label for="chave" id="labelChave">Chave Pix (DDD + Número):</label>
-    <input type="text" id="chave" placeholder="(00) 00000-0000">
+    <!-- Painel de Configurações do Recebedor -->
+    <div id="config-box" class="config-box">
+        <label for="tipoChave" style="margin-top: 0;">Tipo de Chave Pix:</label>
+        <select id="tipoChave" onchange="alterarTipoChave()">
+            <option value="CELULAR">Celular</option>
+            <option value="CPF">CPF</option>
+            <option value="CNPJ">CNPJ</option>
+            <option value="EMAIL">E-mail</option>
+            <option value="EVP">Chave Aleatória (EVP)</option>
+        </select>
 
-    <label for="nome">Nome do Recebedor:</label>
-    <input type="text" id="nome" placeholder="Seu Nome ou Razão Social">
+        <label for="chave" id="labelChave">Chave Pix:</label>
+        <input type="text" id="chave" placeholder="(00) 00000-0000">
 
-    <label for="cidade">Cidade:</label>
-    <input type="text" id="cidade" placeholder="Sua Cidade">
+        <label for="nome">Nome do Recebedor:</label>
+        <input type="text" id="nome" placeholder="Seu Nome">
 
-    <label for="valor">Valor (R$) (Opcional):</label>
-    <input type="text" id="valor" placeholder="0,00" inputmode="numeric">
+        <label for="cidade">Cidade:</label>
+        <input type="text" id="cidade" placeholder="Sua Cidade">
 
-    <button type="button" onclick="gerarPix()">Gerar QR Code</button>
+        <button type="button" class="btn-principal" onclick="salvarEFecharConfig()" style="background-color: #0f172a; margin-top: 14px;">Salvar Dados</button>
+    </div>
 
-    <button type="button" id="btn-instalar">Instalar App no Celular</button>
+    <!-- Tela Principal -->
+    <label for="valor">Digite o Valor (R$):</label>
+    <input type="text" id="valor" class="input-valor" placeholder="0,00" inputmode="numeric" autofocus>
+
+    <button type="button" class="btn-principal" onclick="gerarPix()">Gerar PIX</button>
 
     <div id="result" class="result-box">
         <div id="qrcode-container"></div>
@@ -169,25 +260,27 @@
         <label for="pix-payload">Código Pix Copia e Cola:</label>
         <textarea id="pix-payload" readonly></textarea>
         
-        <button type="button" id="btn-copiar" onclick="copiarPix()">Copiar Código Pix</button>
-        <button type="button" class="btn-whatsapp" onclick="enviarWhatsApp()">Enviar no WhatsApp</button>
+        <button type="button" class="btn-principal btn-whatsapp" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
+        <button type="button" id="btn-copiar" class="btn-principal" onclick="copiarPix()">Copiar Código Pix</button>
     </div>
+
+    <button type="button" id="btn-instalar" class="btn-principal">Instalar App no Celular</button>
 </div>
 
 <div id="toast" class="toast">✓ Código Pix copiado!</div>
 
 <script>
-// --- BANCO DE DADOS PERSISTENTE ---
+// --- SISTEMA DE ARMAZENAMENTO DUPLO E PERMANENTE ---
 let db;
-const dbName = "QrPixDatabase_TESTE";
+const dbName = "QrPixDatabase_V2";
 
 function iniciarBanco() {
     return new Promise((resolve) => {
         const request = indexedDB.open(dbName, 1);
         request.onupgradeneeded = function(e) {
-            let db = e.target.result;
-            if (!db.objectStoreNames.contains("dados")) {
-                db.createObjectStore("dados", { keyPath: "campo" });
+            let dbInstance = e.target.result;
+            if (!dbInstance.objectStoreNames.contains("dados")) {
+                dbInstance.createObjectStore("dados", { keyPath: "campo" });
             }
         };
         request.onsuccess = function(e) {
@@ -201,7 +294,9 @@ function iniciarBanco() {
 }
 
 function salvarDado(campo, valor) {
-    localStorage.setItem('pix_teste_' + campo, valor);
+    try {
+        localStorage.setItem('pix_perm_' + campo, valor);
+    } catch (e) {}
 
     if (db) {
         try {
@@ -210,13 +305,14 @@ function salvarDado(campo, valor) {
             store.put({ campo: campo, valor: valor });
         } catch (err) {}
     }
+    atualizarResumoCard();
 }
 
 function carregarDados() {
-    let tipo = localStorage.getItem('pix_teste_tipoChave');
-    let chave = localStorage.getItem('pix_teste_chave');
-    let nome = localStorage.getItem('pix_teste_nome');
-    let cidade = localStorage.getItem('pix_teste_cidade');
+    let tipo = localStorage.getItem('pix_perm_tipoChave');
+    let chave = localStorage.getItem('pix_perm_chave');
+    let nome = localStorage.getItem('pix_perm_nome');
+    let cidade = localStorage.getItem('pix_perm_cidade');
 
     if (tipo) document.getElementById('tipoChave').value = tipo;
     alterarTipoChave();
@@ -225,37 +321,97 @@ function carregarDados() {
     if (nome) document.getElementById('nome').value = nome;
     if (cidade) document.getElementById('cidade').value = cidade;
 
-    if (db && (!chave || !nome || !cidade)) {
+    if (db) {
         try {
             const tx = db.transaction("dados", "readonly");
             const store = tx.objectStore("dados");
             
             store.get("tipoChave").onsuccess = (e) => {
-                if (e.target.result && !document.getElementById('tipoChave').value) {
+                if (e.target.result && e.target.result.valor) {
                     document.getElementById('tipoChave').value = e.target.result.valor;
+                    localStorage.setItem('pix_perm_tipoChave', e.target.result.valor);
                     alterarTipoChave();
                 }
             };
             store.get("chave").onsuccess = (e) => {
-                if (e.target.result && !document.getElementById('chave').value) {
+                if (e.target.result && e.target.result.valor) {
                     document.getElementById('chave').value = e.target.result.valor;
-                    localStorage.setItem('pix_teste_chave', e.target.result.valor);
+                    localStorage.setItem('pix_perm_chave', e.target.result.valor);
+                    atualizarResumoCard();
                 }
             };
             store.get("nome").onsuccess = (e) => {
-                if (e.target.result && !document.getElementById('nome').value) {
+                if (e.target.result && e.target.result.valor) {
                     document.getElementById('nome').value = e.target.result.valor;
-                    localStorage.setItem('pix_teste_nome', e.target.result.valor);
+                    localStorage.setItem('pix_perm_nome', e.target.result.valor);
+                    atualizarResumoCard();
                 }
             };
             store.get("cidade").onsuccess = (e) => {
-                if (e.target.result && !document.getElementById('cidade').value) {
+                if (e.target.result && e.target.result.valor) {
                     document.getElementById('cidade').value = e.target.result.valor;
-                    localStorage.setItem('pix_teste_cidade', e.target.result.valor);
+                    localStorage.setItem('pix_perm_cidade', e.target.result.valor);
                 }
             };
         } catch (err) {}
     }
+
+    atualizarResumoCard();
+
+    if (!chave || !nome || !cidade) {
+        document.getElementById('config-box').style.display = 'block';
+        document.getElementById('btn-alterar-texto').innerText = 'Cancelar';
+    }
+}
+
+function atualizarResumoCard() {
+    let nome = localStorage.getItem('pix_perm_nome') || document.getElementById('nome').value;
+    let chave = localStorage.getItem('pix_perm_chave') || document.getElementById('chave').value;
+    let tipo = localStorage.getItem('pix_perm_tipoChave') || document.getElementById('tipoChave').value || 'Chave';
+
+    const lblNome = document.getElementById('resumo-nome');
+    const lblChave = document.getElementById('resumo-chave');
+
+    if (nome && chave) {
+        lblNome.innerText = nome;
+        lblChave.innerText = `${tipo}: ${chave}`;
+    } else {
+        lblNome.innerText = 'Sem recebedor cadastrado';
+        lblChave.innerText = 'Clique para configurar seus dados';
+    }
+}
+
+function toggleConfig() {
+    const box = document.getElementById('config-box');
+    const btnText = document.getElementById('btn-alterar-texto');
+    
+    if (box.style.display === 'block') {
+        box.style.display = 'none';
+        btnText.innerText = 'Alterar';
+    } else {
+        box.style.display = 'block';
+        btnText.innerText = 'Cancelar';
+    }
+}
+
+function salvarEFecharConfig() {
+    let tipo = document.getElementById('tipoChave').value;
+    let chave = document.getElementById('chave').value.trim();
+    let nome = document.getElementById('nome').value.trim();
+    let cidade = document.getElementById('cidade').value.trim();
+
+    if (!chave || !nome || !cidade) {
+        alert('Por favor, preencha todos os dados do recebedor.');
+        return;
+    }
+
+    salvarDado('tipoChave', tipo);
+    salvarDado('chave', chave);
+    salvarDado('nome', nome);
+    salvarDado('cidade', cidade);
+
+    document.getElementById('config-box').style.display = 'none';
+    document.getElementById('btn-alterar-texto').innerText = 'Alterar';
 }
 
 function alterarTipoChave() {
@@ -283,59 +439,38 @@ function alterarTipoChave() {
     }
 }
 
+async function solicitarPersistencia() {
+    if (navigator.storage && navigator.storage.persist) {
+        const isPersisted = await navigator.storage.persisted();
+        if (!isPersisted) {
+            await navigator.storage.persist();
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     await iniciarBanco();
     carregarDados();
-
-    if (navigator.storage && navigator.storage.persist) {
-        navigator.storage.persist();
-    }
+    solicitarPersistencia();
 
     document.getElementById('chave').addEventListener('input', (e) => salvarDado('chave', e.target.value));
     document.getElementById('nome').addEventListener('input', (e) => salvarDado('nome', e.target.value));
     document.getElementById('cidade').addEventListener('input', (e) => salvarDado('cidade', e.target.value));
-
-    document.getElementById('pix-payload').addEventListener('click', function() { copiarPix(); });
 });
 
-// Service Worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js').catch(function(err) {});
-    });
-}
-
-// Instalação PWA
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('btn-instalar').style.display = 'block';
-});
-
-document.getElementById('btn-instalar').addEventListener('click', (e) => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-    }
-});
-
-// MÁSCARA DE MOEDA CORRIGIDA E COMPATÍVEL COM PWA MÓVEL
+// Formatação do Valor
 document.getElementById('valor').addEventListener('input', function(e) {
     let value = e.target.value.replace(/\D/g, '');
-    
     if (!value) {
         e.target.value = '';
         return;
     }
-
     let options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
     let result = (parseInt(value, 10) / 100).toLocaleString('pt-BR', options);
-
     e.target.value = result;
 });
 
-// Algoritmo CRC16 CCITT-FALSE Oficial
+// CRC16 CCITT-FALSE
 function CRC16(str) {
     let crc = 0xFFFF;
     const encoder = new TextEncoder();
@@ -354,14 +489,12 @@ function CRC16(str) {
     return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 }
 
-// Formatação TLV calculada rigorosamente em Bytes UTF-8
 function formatField(id, value) {
     const encoder = new TextEncoder();
     const len = encoder.encode(value).length.toString().padStart(2, '0');
     return id + len + value;
 }
 
-// Limpeza de Texto (ASCII sem acentos)
 function limparTexto(texto) {
     if (!texto) return '';
     let t = texto.replace(/&/g, 'E');
@@ -370,7 +503,6 @@ function limparTexto(texto) {
     return t.trim().toUpperCase();
 }
 
-// SANITIZAÇÃO RIGOROSA COM BASE NO TIPO SELECIONADO
 function tratarChavePixPorTipo(chaveBruta, tipo) {
     if (!chaveBruta) return '';
     let c = chaveBruta.trim();
@@ -399,10 +531,10 @@ function tratarChavePixPorTipo(chaveBruta, tipo) {
 }
 
 function gerarPix() {
-    let tipo = document.getElementById('tipoChave').value;
-    let chaveBruta = document.getElementById('chave').value;
-    let nomeOriginal = document.getElementById('nome').value;
-    let cidadeOriginal = document.getElementById('cidade').value;
+    let tipo = document.getElementById('tipoChave').value || localStorage.getItem('pix_perm_tipoChave') || 'CELULAR';
+    let chaveBruta = document.getElementById('chave').value || localStorage.getItem('pix_perm_chave') || '';
+    let nomeOriginal = document.getElementById('nome').value || localStorage.getItem('pix_perm_nome') || '';
+    let cidadeOriginal = document.getElementById('cidade').value || localStorage.getItem('pix_perm_cidade') || '';
     let valorInput = document.getElementById('valor').value;
 
     let chave = tratarChavePixPorTipo(chaveBruta, tipo);
@@ -410,7 +542,9 @@ function gerarPix() {
     let cidade = limparTexto(cidadeOriginal).substring(0, 15);
 
     if (!chave || !nome || !cidade) {
-        alert('Por favor, preencha a chave Pix, o nome e a cidade.');
+        alert('Por favor, preencha todos os dados do recebedor (Chave, Nome e Cidade).');
+        document.getElementById('config-box').style.display = 'block';
+        document.getElementById('btn-alterar-texto').innerText = 'Cancelar';
         return;
     }
 
@@ -441,23 +575,33 @@ function gerarPix() {
     const crc = CRC16(payload);
     const pixCompleto = payload + crc;
 
+    const resultBox = document.getElementById('result');
+    resultBox.style.display = 'block';
+
     document.getElementById('pix-payload').value = pixCompleto;
-    document.getElementById('qrcode-container').innerHTML = '';
+    const qrContainer = document.getElementById('qrcode-container');
+    qrContainer.innerHTML = '';
 
-    new QRCode(document.getElementById('qrcode-container'), { 
-        text: pixCompleto, 
-        width: 180, 
-        height: 180,
-        correctLevel: QRCode.CorrectLevel.M
-    });
+    setTimeout(() => {
+        if (typeof QRCode === 'undefined') {
+            alert('A biblioteca do QR Code não carregou. Verifique sua conexão com a internet e tente novamente.');
+            return;
+        }
 
-    document.getElementById('result').style.display = 'block';
+        new QRCode(qrContainer, { 
+            text: pixCompleto, 
+            width: 180, 
+            height: 180,
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    }, 50);
 }
 
-function mostrarAviso() {
+function mostrarAviso(mensagemPersonalizada) {
     const toast = document.getElementById('toast');
     const btn = document.getElementById('btn-copiar');
     
+    toast.innerText = mensagemPersonalizada || '✓ Código Pix copiado!';
     toast.classList.add('show');
     btn.innerText = '✓ Código Copiado!';
     btn.style.backgroundColor = '#06b6d4';
@@ -471,32 +615,99 @@ function mostrarAviso() {
     }, 2200);
 }
 
-function copiarPix() {
+async function copiarParaClipboardAssincrono(texto) {
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(texto);
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+    return false;
+}
+
+function copiarPix(silencioso = false) {
     const payloadInput = document.getElementById('pix-payload');
-    const texto = payloadInput.value.trim();
+    const texto = payloadInput ? payloadInput.value.trim() : '';
     if (!texto) return;
 
     payloadInput.focus();
     payloadInput.select();
 
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(texto).then(() => mostrarAviso()).catch(() => {
-            document.execCommand('copy');
-            mostrarAviso();
-        });
-    } else {
-        document.execCommand('copy');
-        mostrarAviso();
+    copiarParaClipboardAssincrono(texto).then((sucesso) => {
+        if (!sucesso) {
+            try {
+                document.execCommand('copy');
+            } catch (e) {}
+        }
+        if (!silencioso) mostrarAviso();
+    });
+}
+
+// --- ENVIO EM 2 ETAPAS ---
+async function enviarWhatsApp() {
+    const payloadInput = document.getElementById('pix-payload');
+    const pixCode = payloadInput ? payloadInput.value.trim() : '';
+
+    if (!pixCode) {
+        alert('Gere o código Pix antes de enviar!');
+        return;
     }
+
+    // 1. Copia o código Pix para a área de transferência do celular
+    const copiado = await copiarParaClipboardAssincrono(pixCode);
+    if (!copiado) {
+        try {
+            payloadInput.focus();
+            payloadInput.select();
+            document.execCommand('copy');
+        } catch (e) {}
+    }
+
+    // 2. Notifica com o toast
+    mostrarAviso('✓ Pix copiado! Cole a chave após enviar o resumo.');
+
+    const nome = localStorage.getItem('pix_perm_nome') || document.getElementById('nome').value || 'Recebedor';
+    const valor = document.getElementById('valor').value || '0,00';
+
+    // 3. Monta o resumo destacando em negrito e itálico apenas "copiar código Pix"
+    const mensagemResumo = `💠 *DADOS PARA PAGAMENTO VIA PIX*\n\n` +
+                           `👤 *Recebedor:* ${nome}\n` +
+                           `💵 *Valor:* R$ ${valor}\n\n` +
+                           `👇 *O código Pix vai na mensagem abaixo:*\n` +
+                           `Caso não apareça o botão _*copiar código Pix*_, pressione o dedo em cima do código para copiar`;
+
+    // 4. Monta a URL de redirecionamento
+    const params = new URLSearchParams();
+    params.append('text', mensagemResumo);
+    const urlFinal = `https://api.whatsapp.com/send?${params.toString()}`;
+
+    // 5. Redireciona para o WhatsApp após breve delay
+    setTimeout(() => {
+        window.location.href = urlFinal;
+    }, 200);
 }
 
-function enviarWhatsApp() {
-    const pixCode = document.getElementById('pix-payload').value.trim();
-    if (!pixCode) return;
-
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(pixCode)}`;
-    window.open(url, '_blank');
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').catch(function(err) {});
+    });
 }
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('btn-instalar').style.display = 'block';
+});
+
+document.getElementById('btn-instalar').addEventListener('click', (e) => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+    }
+});
 </script>
 
 </body>
